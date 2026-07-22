@@ -1,0 +1,18 @@
+name: PR Checks
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+  merge_group:
+    types: [checks_requested]
+  push:
+    branches:
+      - main
+
+
+jobs:
+  # Common S-CORE Workflow
+  common:
+    uses: eclipse-score/cicd-workflows/.github/workflows/on-pr.yml@88cb460c47cb49efeb25cd7b73c8945dd1c5bce2 # on-pr/v0.0.0
+    permissions:
+      contents: read
