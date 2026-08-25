@@ -171,7 +171,7 @@ def load_exclusion(path):
 
     Paths listed in the exclusion file are interpreted the same way as the
     positional ``inputs`` handled by `collect_inputs`: relative to
-    `BUILD_WORKSPACE_DIRECTORY` when running under `bazel run`/`bazel test`,
+    `BUILD_WORKSPACE_DIRECTORY` when running under `bazel run`,
     or relative to the current working directory otherwise. The returned
     exclusion list is normalized the same way so it can be matched against
     the paths produced by `collect_inputs`.
