@@ -30,6 +30,7 @@ BYTES_TO_READ = 4 * 1024
 
 BORDER_FILL_PATTERN = re.compile(r"([/*#'\-=+])\1{4,}")
 FILL_CHARS_REGEX = r"[/*#'\-=+]+"
+GLOB_CHARS = ("*", "?", "[")
 
 LOGGER = logging.getLogger()
 
@@ -165,7 +166,7 @@ def load_templates(path: Path):
     return templates
 
 
-def load_exclusion(path):
+def load_exclusion(path: Path) -> tuple[list[str], bool]:
     """
     Loads the list of files being excluded from the copyright check.
 
@@ -176,23 +177,40 @@ def load_exclusion(path):
     exclusion list is normalized the same way so it can be matched against
     the paths produced by `collect_inputs`.
 
+    Lines may be either a literal path or a glob pattern. A line containing
+    any of ``*``, ``?`` or ``[`` is expanded with `Path.glob` relative to the
+    same base directory; ``**`` matches zero or more directory levels, so
+    ``.claude/**/*`` excludes every file and sub-directory below ``.claude``
+    at any depth. A literal path must point at an existing file, as before.
+    Blank lines and lines starting with ``#`` are ignored.
+
     Args:
         path (str): Path to the exclusion file.
 
     Returns:
-        tuple(list, bool): a list of files that are excluded from the copyright check and a boolean indicating whether
-                           all paths listed in the exclusion file exist and are files.
+        tuple(list[str], bool): a sorted, de-duplicated list of paths (as str) that are
+                           excluded from the copyright check, and a boolean
+                           indicating whether every line resolved to
+                           something: literal paths must exist and be files,
+                           glob patterns must match at least one path.
     """
-
     workspace_dir = Path(os.environ.get("BUILD_WORKSPACE_DIRECTORY", "").strip())
-
-    exclusion = []
+    exclusion: set[str] = set()
     valid = True
     with open(path, "r", encoding="utf-8") as file:
-        for item in file.read().splitlines():
-            if not item:
+        for line in file.read().splitlines():
+            item = line.strip()
+            if not item or item.startswith("#"):
                 continue
-            resolved = Path(workspace_dir / item)
+            if any(char in item for char in GLOB_CHARS):
+                matches = {str(match) for match in workspace_dir.glob(item)}
+                if not matches:
+                    LOGGER.error("Exclusion pattern %s matched nothing.", item)
+                    valid = False
+                    continue
+                exclusion |= matches
+                continue
+            resolved = workspace_dir / item
             if not resolved.exists():
                 LOGGER.error("Excluded file %s does not exist.", item)
                 valid = False
@@ -201,10 +219,9 @@ def load_exclusion(path):
                 LOGGER.error("Excluded file %s is not a file.", item)
                 valid = False
                 continue
-            exclusion.append(str(resolved))
-
+            exclusion.add(str(resolved))
     LOGGER.debug(exclusion)
-    return exclusion, valid
+    return sorted(exclusion), valid
 
 
 def configure_logging(log_file_path=None, verbose=False):
