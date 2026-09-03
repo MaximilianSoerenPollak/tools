@@ -447,8 +447,6 @@ def test_exclusion_file_respected_at_root(tmp_path):
     assert test_file.read_text(encoding="utf-8") == original_content
 
 
-
-
 # test that an exclusion.txt file sitting in a deeply nested directory is respected:
 # the listed file is neither flagged nor altered
 def test_exclusion_file_respected_in_nested_directory(tmp_path):
@@ -482,6 +480,7 @@ def test_exclusion_file_respected_in_nested_directory(tmp_path):
     assert results["fixed"] == 0
     assert test_file.read_text(encoding="utf-8") == original_content
 
+
 # test that a glob entry in the exclusion file is expanded recursively:
 # `.claude/**/*` covers direct children as well as arbitrarily nested files,
 # and a literal entry in the same file keeps working alongside it
@@ -506,10 +505,7 @@ def test_exclusion_file_expands_glob_pattern(tmp_path, monkeypatch):
 
     exclusion_file = workspace_dir / "exclusion.txt"
     exclusion_file.write_text(
-        "# AI - Stuff\n"
-        ".claude/**/*\n"
-        "\n"
-        "tool/generated.py\n",
+        "# AI - Stuff\n.claude/**/*\n\ntool/generated.py\n",
         encoding="utf-8",
     )
 
