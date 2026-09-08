@@ -14,10 +14,14 @@
 # unit tests for the shebang handling in the cr_checker module
 from __future__ import annotations
 
+import logging
 import importlib.util
 import pytest
 from datetime import datetime
 from pathlib import Path
+
+
+LOGGER = logging.getLogger(__name__)
 
 
 # load the cr_checker module
@@ -170,7 +174,7 @@ def test_process_files_skips_exclusion_with_missing_header(prepare_test_no_heade
         files=[test_file],
         templates={extension: header_template},
         fix=False,
-        exclusion=[str(test_file)],
+        exclusion={str(test_file)},
         use_mmap=False,
         encoding="utf-8",
     )
@@ -431,7 +435,7 @@ def test_exclusion_file_respected_at_root(tmp_path):
 
     exclusion, valid = cr_checker.load_exclusion(exclusion_file)
     assert valid is True
-    assert exclusion == [str(test_file)]
+    assert exclusion == {str(test_file)}
 
     results = cr_checker.process_files(
         files=[test_file],
@@ -465,7 +469,7 @@ def test_exclusion_file_respected_in_nested_directory(tmp_path):
 
     exclusion, valid = cr_checker.load_exclusion(exclusion_file)
     assert valid is True
-    assert exclusion == [str(test_file)]
+    assert exclusion == {str(test_file)}
 
     results = cr_checker.process_files(
         files=[test_file],
@@ -542,6 +546,36 @@ def test_exclusion_file_expands_glob_pattern(tmp_path, monkeypatch):
     )
 
 
+# test the pathway where a glob pattern does not match anything
+def test_exclusion_file_glob_without_match_is_invalid(tmp_path, monkeypatch, caplog):
+    cr_checker = load_cr_checker_module()
+
+    workspace_dir = tmp_path / "workspace"
+    nested_dir = workspace_dir / ".claude" / "skills" / "some_skill" / "scripts"
+    nested_dir.mkdir(parents=True)
+
+    original_content = "some content\n"
+    nested_file = nested_dir / "fix_titles.py"
+    nested_file.write_text(original_content, encoding="utf-8")
+
+    exclusion_file = workspace_dir / "exclusion.txt"
+    exclusion_file.write_text(
+        "# This doesn't exists \n.not_here/**/*\n\n.claude/**/*\n",
+        encoding="utf-8",
+    )
+
+    execroot = tmp_path / "execroot"
+    execroot.mkdir()
+    monkeypatch.chdir(execroot)
+    monkeypatch.setenv("BUILD_WORKSPACE_DIRECTORY", str(workspace_dir))
+
+    with caplog.at_level(logging.WARNING):
+        _, valid = cr_checker.load_exclusion(exclusion_file)
+    assert "Exclusion pattern .not_here/**/* matched nothing." in caplog.text
+
+    assert valid is False
+
+
 # test that a workspace-relative exclusion entry (as produced by e.g. `git ls-files`)
 # is still resolved correctly when the process's cwd is not the workspace root, which
 # is what happens under `bazel run`/`bazel test` (BUILD_WORKSPACE_DIRECTORY is set to
@@ -569,7 +603,7 @@ def test_exclusion_file_respected_under_bazel_run_cwd(tmp_path, monkeypatch):
 
     exclusion, valid = cr_checker.load_exclusion(exclusion_file)
     assert valid is True
-    assert exclusion == [str(test_file)]
+    assert exclusion == {str(test_file)}
 
     collected_files = cr_checker.collect_inputs([relative_entry], exts=["py"])
     assert collected_files == [test_file]

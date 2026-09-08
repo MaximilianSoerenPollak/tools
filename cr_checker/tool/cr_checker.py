@@ -166,7 +166,7 @@ def load_templates(path: Path):
     return templates
 
 
-def load_exclusion(path: Path) -> tuple[list[str], bool]:
+def load_exclusion(path: Path) -> tuple[set[str], bool]:
     """
     Loads the list of files being excluded from the copyright check.
 
@@ -185,10 +185,10 @@ def load_exclusion(path: Path) -> tuple[list[str], bool]:
     Blank lines and lines starting with ``#`` are ignored.
 
     Args:
-        path (str): Path to the exclusion file.
+        path (Path): Path to the exclusion file.
 
     Returns:
-        tuple(list[str], bool): a sorted, de-duplicated list of paths (as str) that are
+        tuple(set[str], bool): a de-duplicated set of paths (as str) that are
                            excluded from the copyright check, and a boolean
                            indicating whether every line resolved to
                            something: literal paths must exist and be files,
@@ -203,7 +203,12 @@ def load_exclusion(path: Path) -> tuple[list[str], bool]:
             if not item or item.startswith("#"):
                 continue
             if any(char in item for char in GLOB_CHARS):
-                matches = {str(match) for match in workspace_dir.glob(item)}
+                try:
+                    matches = {str(match) for match in workspace_dir.glob(item)}
+                except (ValueError, NotImplementedError) as err:
+                    LOGGER.error("Invalid exclusion pattern %s: %s", item, err)
+                    valid = False
+                    continue
                 if not matches:
                     LOGGER.error("Exclusion pattern %s matched nothing.", item)
                     valid = False
@@ -221,7 +226,7 @@ def load_exclusion(path: Path) -> tuple[list[str], bool]:
                 continue
             exclusion.add(str(resolved))
     LOGGER.debug(exclusion)
-    return sorted(exclusion), valid
+    return exclusion, valid
 
 
 def configure_logging(log_file_path=None, verbose=False):
@@ -590,7 +595,7 @@ def process_files(
     files,
     templates,
     fix,
-    exclusion: list[str] | None = None,
+    exclusion: set[str] | None = None,
     use_mmap=False,
     encoding="utf-8",
 ):  # pylint: disable=too-many-arguments
@@ -602,8 +607,8 @@ def process_files(
         templates (dict): A dictionary where keys are file extensions
                           (e.g., '.py', '.txt') and values are strings or patterns
                           representing the required copyright text.
-        exclusion (list): A list of paths to files to be excluded from the copyright
-                          check.
+        exclusion (set): A set of paths (as str) to files to be excluded from the
+                         copyright check.
         use_mmap (bool): Flag for using mmap function for reading files
                          (instead of standard option).
         encoding (str): Encoding type to use when reading the file.
@@ -612,7 +617,7 @@ def process_files(
         int: The number of files that do not contain the required copyright text.
     """
     if exclusion is None:
-        exclusion = []
+        exclusion = set()
     results = {"no_copyright": 0, "fixed": 0, "duplicate_copyright": 0}
     for item in files:
         name = Path(item).name
@@ -780,7 +785,7 @@ def main(argv=None):
         LOGGER.error("Failed to load copyright text: %s", err)
         return err.errno
 
-    exclusion = []
+    exclusion = set()
     exclusion_valid = True
     if args.exclusion_file:
         try:
