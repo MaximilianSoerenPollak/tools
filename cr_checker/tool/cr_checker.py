@@ -30,6 +30,7 @@ BYTES_TO_READ = 4 * 1024
 
 BORDER_FILL_PATTERN = re.compile(r"([/*#'\-=+])\1{4,}")
 FILL_CHARS_REGEX = r"[/*#'\-=+]+"
+GLOB_CHARS = ("*", "?", "[")
 
 LOGGER = logging.getLogger()
 
@@ -165,7 +166,7 @@ def load_templates(path: Path):
     return templates
 
 
-def load_exclusion(path):
+def load_exclusion(path: Path) -> tuple[set[str], bool]:
     """
     Loads the list of files being excluded from the copyright check.
 
@@ -176,23 +177,45 @@ def load_exclusion(path):
     exclusion list is normalized the same way so it can be matched against
     the paths produced by `collect_inputs`.
 
+    Lines may be either a literal path or a glob pattern. A line containing
+    any of ``*``, ``?`` or ``[`` is expanded with `Path.glob` relative to the
+    same base directory; ``**`` matches zero or more directory levels, so
+    ``.claude/**/*`` excludes every file and sub-directory below ``.claude``
+    at any depth. A literal path must point at an existing file, as before.
+    Blank lines and lines starting with ``#`` are ignored.
+
     Args:
-        path (str): Path to the exclusion file.
+        path (Path): Path to the exclusion file.
 
     Returns:
-        tuple(list, bool): a list of files that are excluded from the copyright check and a boolean indicating whether
-                           all paths listed in the exclusion file exist and are files.
+        tuple(set[str], bool): a de-duplicated set of paths (as str) that are
+                           excluded from the copyright check, and a boolean
+                           indicating whether every line resolved to
+                           something: literal paths must exist and be files,
+                           glob patterns must match at least one path.
     """
-
     workspace_dir = Path(os.environ.get("BUILD_WORKSPACE_DIRECTORY", "").strip())
-
-    exclusion = []
+    exclusion: set[str] = set()
     valid = True
     with open(path, "r", encoding="utf-8") as file:
-        for item in file.read().splitlines():
-            if not item:
+        for line in file.read().splitlines():
+            item = line.strip()
+            if not item or item.startswith("#"):
                 continue
-            resolved = Path(workspace_dir / item)
+            if any(char in item for char in GLOB_CHARS):
+                try:
+                    matches = {str(match) for match in workspace_dir.glob(item)}
+                except (ValueError, NotImplementedError) as err:
+                    LOGGER.error("Invalid exclusion pattern %s: %s", item, err)
+                    valid = False
+                    continue
+                if not matches:
+                    LOGGER.error("Exclusion pattern %s matched nothing.", item)
+                    valid = False
+                    continue
+                exclusion |= matches
+                continue
+            resolved = workspace_dir / item
             if not resolved.exists():
                 LOGGER.error("Excluded file %s does not exist.", item)
                 valid = False
@@ -201,8 +224,7 @@ def load_exclusion(path):
                 LOGGER.error("Excluded file %s is not a file.", item)
                 valid = False
                 continue
-            exclusion.append(str(resolved))
-
+            exclusion.add(str(resolved))
     LOGGER.debug(exclusion)
     return exclusion, valid
 
@@ -573,7 +595,7 @@ def process_files(
     files,
     templates,
     fix,
-    exclusion: list[str] | None = None,
+    exclusion: set[str] | None = None,
     use_mmap=False,
     encoding="utf-8",
 ):  # pylint: disable=too-many-arguments
@@ -585,8 +607,8 @@ def process_files(
         templates (dict): A dictionary where keys are file extensions
                           (e.g., '.py', '.txt') and values are strings or patterns
                           representing the required copyright text.
-        exclusion (list): A list of paths to files to be excluded from the copyright
-                          check.
+        exclusion (set): A set of paths (as str) to files to be excluded from the
+                         copyright check.
         use_mmap (bool): Flag for using mmap function for reading files
                          (instead of standard option).
         encoding (str): Encoding type to use when reading the file.
@@ -595,7 +617,7 @@ def process_files(
         int: The number of files that do not contain the required copyright text.
     """
     if exclusion is None:
-        exclusion = []
+        exclusion = set()
     results = {"no_copyright": 0, "fixed": 0, "duplicate_copyright": 0}
     for item in files:
         name = Path(item).name
@@ -763,7 +785,7 @@ def main(argv=None):
         LOGGER.error("Failed to load copyright text: %s", err)
         return err.errno
 
-    exclusion = []
+    exclusion = set()
     exclusion_valid = True
     if args.exclusion_file:
         try:
