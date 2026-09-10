@@ -206,6 +206,7 @@ def run_policies(
             cache_dir=checkout_cache_directory,
             repos=repository_names,
             workers=sync_workers,
+            max_selected_repositories=1 if recreate else None,
             progress=report_progress,
         )
     except RepoCacheError as exc:
@@ -214,6 +215,11 @@ def run_policies(
     selected_repositories = tuple(
         outcome.repository for outcome in sync_report.outcomes
     )
+    if recreate and len(selected_repositories) != 1:
+        raise RepoPolicySyncError(
+            "--recreate requires exactly one repository after repository "
+            "patterns are expanded"
+        )
     skipped_repositories = {
         outcome.repository.name
         for outcome in sync_report.outcomes
