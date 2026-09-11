@@ -141,12 +141,22 @@ class EnsureBazelDependency:
     rationale: str | None = None
 
 
+@dataclass(frozen=True)
+class EnsureBazelDependencyDevDependency:
+    """Ensure the ``dev_dependency`` setting of a direct bzlmod dependency."""
+
+    module_name: str
+    dev_dependency: bool
+    rationale: str | None = None
+
+
 EnsureOperation = (
     EnsureLine
     | RemoveFile
     | ReplaceRegex
     | EnsureMinimumVersion
     | EnsureBazelDependency
+    | EnsureBazelDependencyDevDependency
 )
 
 
