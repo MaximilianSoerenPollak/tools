@@ -25,6 +25,10 @@
 
 {{ changes }}
 
+## Tool revision
+
+Generated from [eclipse-score/tools](https://github.com/eclipse-score/tools) at commit `{{ tool_revision }}`.
+
 {{ failure_section }}
 
 ---
