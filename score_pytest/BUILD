@@ -12,11 +12,14 @@
 # *******************************************************************************
 
 load("@aspect_rules_py//py:defs.bzl", "py_library")
+load("@rules_python//python:pip.bzl", "compile_pip_requirements")
 load("//score_pytest:pytest.bzl", "score_pytest")
 
 exports_files([
     "pytest.ini",
     "py_pytest.bzl",
+    "requirements_py314.txt",
+    "requirements_py312.txt",
 ])
 
 score_pytest(
@@ -35,3 +38,33 @@ py_library(
     imports = ["."],
     visibility = ["//visibility:public"],
 )
+
+compile_pip_requirements(
+    name = "requirements",
+    srcs = [
+        "requirements.in",
+    ],
+    requirements_txt = "requirements_py312.txt",
+    tags = [
+        "manual",
+    ],
+)
+
+
+compile_pip_requirements(
+    name = "requirements_py314",
+    # Keep the Python version selector in pip-compile's generated header so
+    # developers regenerate this lock with its matching toolchain.
+    env = {
+        "CUSTOM_COMPILE_COMMAND": "bazel run --@rules_python//python/config_settings:python_version=3.14 //score_pytest:requirements_py314.update",
+    },
+    srcs = [
+        "requirements.in",
+    ],
+    requirements_txt = "requirements_py314.txt",
+    tags = [
+        "manual",
+    ],
+)
+
+
