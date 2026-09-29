@@ -23,7 +23,7 @@ This module provides support for running [pytest](https://docs.pytest.org/en/lat
 - **Requirements Traceability**: Link tests to requirement IDs
 - **Automatic File/Line Attribution**: Annotates tests with file path and line number
 - **JUnit XML Integration**: Exports metadata as `<properties>` in test reports
-- **Bazel Integration**: Run tests with `score_py_pytest` Bazel rule
+- **Bazel Integration**: Run tests with `score_pytest` Bazel rule
 
 ---
 
@@ -56,7 +56,7 @@ score_pytest(
     env = {
         "LD_LIBRARY_PATH": "/path/to/dynamic/lib",  # Optional environment
     },
-    pytest_ini = "//my_pytest:my_pytest_ini",  # Optional custom pytest.ini
+    pytest_config = "//my_pytest:my_pytest_config",  # Optional custom pytest config
     tags = ["integration"]  # Optional tags for test grouping
 )
 ```
@@ -70,7 +70,7 @@ You can use the provided `add_test_properties` decorator to enhance your tests w
 ### Example
 
 ```python
-from your_module import add_test_properties
+from attribute_plugin import add_test_properties
 
 @add_test_properties(
     partially_verifies=["REQ-001", "REQ-002"],

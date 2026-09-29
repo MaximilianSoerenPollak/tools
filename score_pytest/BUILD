@@ -17,7 +17,7 @@ load("//score_pytest:pytest.bzl", "score_pytest")
 
 exports_files([
     "pytest.ini",
-    "py_pytest.bzl",
+    "pytest.bzl",
     "requirements_py314.txt",
     "requirements_py312.txt",
 ])
