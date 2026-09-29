@@ -1,0 +1,33 @@
+# *******************************************************************************
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+
+# Consumer-style integration tests for score_pytest.
+# This is a separate Bazel module; run it from this directory:
+#   bazel test //...
+module(name = "score_pytest_integration_tests")
+
+# score_pytest's pip dependencies are locked for Python 3.12,
+# so the consumer has to default to a matching toolchain.
+bazel_dep(name = "rules_python", version = "1.8.4")
+
+python = use_extension("@rules_python//python/extensions:python.bzl", "python")
+python.toolchain(
+    is_default = True,
+    python_version = "3.12",
+)
+
+bazel_dep(name = "score_tools", version = "0.0.0")
+local_path_override(
+    module_name = "score_tools",
+    path = "../../..",
+)
