@@ -28,7 +28,7 @@ def test_score_markers_are_registered(pytestconfig: pytest.Config):
 # With '--strict-markers' (see BUILD) this fails at collection time
 # if the score markers are not registered.
 @add_test_properties(
-    fully_verifies = ["TREQ_ID_2"],
+    fully_verifies=["TREQ_ID_2"],
     partially_verifies=["TREQ_ID_1"],
     test_type="interface-test",
     derivation_technique="design-analysis",
