@@ -34,5 +34,27 @@ def test_score_markers_are_registered(pytestconfig: pytest.Config):
     derivation_technique="design-analysis",
 )
 @pytest.mark.metadata
-def test_score_markers_are_usable():
-    """Score markers can be used with the default pytest.ini."""
+def test_fully_and_paritall_verifies_allowed():
+    """Both partial & fully verifies are allowed"""
+
+
+# Test that only fully is allowed
+@add_test_properties(
+    fully_verifies=["TREQ_ID_2"],
+    test_type="interface-test",
+    derivation_technique="design-analysis",
+)
+@pytest.mark.metadata
+def test_fully_verifies_allowed():
+    """Fully verifies only is allowed"""
+
+
+# Test that only partially is allowed
+@add_test_properties(
+    partially_verifies=["TREQ_ID_1"],
+    test_type="interface-test",
+    derivation_technique="design-analysis",
+)
+@pytest.mark.metadata
+def test_partially_verifies_allowed():
+    """Partially verifies only is allowed"""

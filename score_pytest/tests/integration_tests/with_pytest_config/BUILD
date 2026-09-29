@@ -21,7 +21,7 @@ score_pytest(
     pytest_config = "pyproject.toml",
 )
 score_pytest(
-    name = "test_with_config_both_verifies_allowed",
-    srcs = ["test_both_verifies_are_allowed.py"],
+    name = "test_with_config_verifies_allowed",
+    srcs = ["test_verifies_are_allowed.py"],
     pytest_config = "pyproject.toml",
 )

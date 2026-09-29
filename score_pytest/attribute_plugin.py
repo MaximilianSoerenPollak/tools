@@ -76,7 +76,7 @@ def _build_test_properties(
     (runtime, for parameterized / RST-driven tests).
     """
     # Early error handling
-    if partially_verifies is None and fully_verifies is not None:
+    if partially_verifies is None and fully_verifies is None:
         raise ValueError(
             "Either 'partially_verifies' or 'fully_verifies' must be provided."
         )
