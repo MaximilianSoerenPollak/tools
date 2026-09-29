@@ -48,6 +48,7 @@ def test_fully_and_paritall_verifies_allowed():
 def test_fully_verifies_allowed():
     """Fully verifies only is allowed"""
 
+
 # Test that only partially is allowed
 @add_test_properties(
     partially_verifies=["TREQ_ID_1"],
