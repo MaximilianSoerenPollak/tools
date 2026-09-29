@@ -183,20 +183,35 @@ When using `--junit-xml=report.xml`, the plugin augments each test case with:
 
 ### Updating `pytest` and dependencies
 
-Update the dependencies listed in `requirements.txt` and lock them with:
-
+To **update 3.12** dependencies, use the following command:
 ```bash
-bazel run //:requirements.update -- --upgrade
+bazel run //score_pytest:requirements.update
 ```
+
+If you want to **update 3.14** dependencies do this like so:
+```bash
+bazel run --@rules_python//python/config_settings:python_version=3.14 //score_pytest:requirements_py314.update
+```
+
+If you want to **upgrade** the dependencies append ` -- --upgrade` to the end of your command.
+
 
 ---
 
 ### Running Tests
 
-To run the internal tests for this module:
+To run the unit-tests in this folder (along the rest of tools) use:
+```bash
+uv run --locked pytest --ignore-glob='bazel-*'
+```
+
+To run the integration tests for this module:
 
 ```bash
+cd score_pytest/tests/integration_tests
 bazel test //...
 ```
+
+
 
 ---
