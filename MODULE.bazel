@@ -15,5 +15,14 @@ module(
     name = "score_tools"
 )
 # CR_CHECKER
-bazel_dep(name = "aspect_rules_py", version = "1.6.3", dev_dependency = True)
-bazel_dep(name = "score_tooling", version = "1.2.0")
+bazel_dep(name = "aspect_rules_py", version = "1.6.3")
+#bazel_dep(name = "score_tooling", version = "1.2.0")
+bazel_dep(name = "rules_python", version = "1.8.4")
+
+pip = use_extension("@rules_python//python/extensions:pip.bzl", "pip")
+pip.parse(
+    hub_name = "score_pytest_pip",
+    python_version = "3.12",
+    requirements_lock = "//score_pytest:requirements_lock.txt",
+)
+use_repo(pip, "score_pytest_pip")
