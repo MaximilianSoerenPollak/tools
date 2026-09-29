@@ -66,5 +66,3 @@ compile_pip_requirements(
         "manual",
     ],
 )
-
-
