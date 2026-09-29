@@ -20,3 +20,8 @@ score_pytest(
     srcs = ["test_markers_with_pytest_config.py"],
     pytest_config = "pyproject.toml",
 )
+score_pytest(
+    name = "test_with_config_both_verifies_allowed",
+    srcs = ["test_both_verifies_are_allowed.py"],
+    pytest_config = "pyproject.toml",
+)
