@@ -16,7 +16,7 @@ module(
 )
 
 # CR_CHECKER
-bazel_dep(name = "aspect_rules_py", version = "1.6.3")
+bazel_dep(name = "aspect_rules_py", version = "1.4.0")
 
 bazel_dep(name = "rules_python", version = "1.8.5")
 
