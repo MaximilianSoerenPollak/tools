@@ -118,9 +118,12 @@ commands still run when their conditional file exists.
 `when.file_exists` requires one repository-relative file to exist.
 
 `when.bazel.direct_module_dependencies` requires every listed module to be a
-direct `bazel_dep(name = "…")` declaration in `MODULE.bazel`. The optional
-`when.bazel.any_direct_module_dependencies` field requires at least one of its
-listed modules to be direct, which is useful during module renames.
+direct `bazel_dep(name = "…")` declaration in `MODULE.bazel`, or to match the
+repository's own `module(name = "…")` declaration. The optional
+`when.bazel.any_direct_module_dependencies` field requires at least one listed
+module to match either form, which is useful during module renames. Version
+comparisons below apply only to direct `bazel_dep` declarations because the
+repository's own module declaration has no dependency version.
 
 The optional `when.bazel.any_direct_module_conditions` field accepts a
 non-empty list of version comparisons such as
@@ -180,6 +183,34 @@ duplicates of `line`. It inserts the desired line at the first removed or
 existing match; without one, it appends the line. A missing file is created.
 Globs use `*`, `?`, and `[...]` and match complete raw lines; comments and
 whitespace have no special meaning.
+
+### `sync_managed_block`
+
+```yaml
+- type: sync_managed_block
+  path: .gitignore
+  source: docs-as-code-build-artifacts.gitignore
+  marker: docs-as-code build artifacts
+  replace_line_globs: ["*_build*", "*ubproject.toml*"]
+```
+
+Synchronizes a UTF-8 text asset from the policy directory into a bounded block
+in a repository file. The source asset contains the block body only. The
+operation derives the boundary lines as `# <marker>` and `# end <marker>`; each
+must occur exactly once and the start line must precede the end line. A
+partial, duplicate, or misordered pair is rejected. When the pair exists, only
+its body is replaced and configured legacy lines are removed outside the
+managed block.
+
+When the destination does not exist, the operation creates it with the marked
+block. For an existing destination without markers, at least one configured
+`replace_lines` or `replace_line_globs` entry must match; otherwise the
+operation fails and leaves the repository unmodified. Matching legacy lines
+are removed and the block is inserted at the first match. This supports an
+explicit one-time migration while preventing an unmarked file from opting in
+implicitly. `source` is relative to the policy directory and must resolve to a
+regular UTF-8 file without escaping that directory; `path` is a
+repository-relative destination.
 
 ### `ensure_exact`
 

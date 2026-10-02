@@ -1277,7 +1277,9 @@ def _policy_trigger(policy: Policy, changes: tuple[Change, ...]) -> str:
         )
         if dependencies:
             reasons.append(
-                f"`MODULE.bazel` declares the required direct Bazel dependency or dependencies: {dependencies}"
+                f"`MODULE.bazel` matches every required module name through either "
+                f"a direct Bazel dependency or this repository's own module "
+                f"declaration: {dependencies}"
             )
         any_dependencies = ", ".join(
             f"`{dependency}`"
@@ -1285,7 +1287,9 @@ def _policy_trigger(policy: Policy, changes: tuple[Change, ...]) -> str:
         )
         if any_dependencies:
             reasons.append(
-                f"`MODULE.bazel` declares at least one of these direct Bazel dependencies: {any_dependencies}"
+                f"`MODULE.bazel` matches at least one listed module name through "
+                f"either a direct Bazel dependency or this repository's own "
+                f"module declaration: {any_dependencies}"
             )
     value_exists_condition = policy.value_exists_condition
     if value_exists_condition is not None:

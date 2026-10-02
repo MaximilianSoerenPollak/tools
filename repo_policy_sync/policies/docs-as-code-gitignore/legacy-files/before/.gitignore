@@ -1,4 +1,7 @@
-/keep
+# This file is processed because MODULE.bazel declares score_docs_as_code.
+# These legacy artifact entries let the policy migrate this existing file.
+.repo-ignore-1
 /_build
 /docs/ubproject.toml
 /_build
+.repo-ignore-2
